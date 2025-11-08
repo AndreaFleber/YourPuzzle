@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>YourPuzzle — Reveal Together</title>
+<style>
+  :root{
+    --bg:#07060a; --card:#0b0b10; --accent:#c084fc; --muted: #9ca3af;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#030205 0%, #0b0711 100%);color:#eee;display:flex;align-items:center;justify-content:center;padding:20px}
+  .wrap{width:min(1300px,96vw)}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  h1{font-size:20px;margin:0;letter-spacing:0.6px}
+  .subtitle{color:var(--muted);font-size:13px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:14px;padding:14px;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+  #boardWrap{position:relative;border-radius:10px;overflow:hidden;background:#000}
+  #bgImage{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(0.75) contrast(1.02) saturate(1.05);z-index:0}
+  #grid{position:relative;z-index:5;display:grid;gap:1px}
+  .tile{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));cursor:pointer;min-height:6px}
+  .tile.hidden{background:#0c0b10}
+  .tile.revealed{background:transparent}
+  .overlayTop{position:absolute;left:12px;top:12px;z-index:20;display:flex;gap:12px;align-items:center}
+  .stat{background:rgba(0,0,0,0.36);padding:8px 10px;border-radius:10px;font-size:13px}
+  .controls{display:flex;gap:8px;align-items:center}
+  button{background:var(--accent);border:none;padding:8px 12px;border-radius:9px;color:#0b0b10;font-weight:700;cursor:pointer}
+  .progress{height:10px;background:#0a0b0f;border-radius:8px;overflow:hidden}
+  .bar{height:100%;background:linear-gradient(90deg,var(--accent), #fb7185);width:0%}
+  footer{margin-top:10px;color:var(--muted);font-size:12px}
+  .locked{opacity:0.6;filter:grayscale(0.6)}
+  .centerMarker{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:15}
+  .centerMarker small{background:rgba(0,0,0,0.4);padding:6px 10px;border-radius:10px;color:var(--muted);font-size:13px}
+  @media (max-width:900px){ .wrap{width:96vw} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>YourPuzzle</h1>
+        <div class="subtitle">Puzzle collettivo artistico — scegli una tessera, svela il pezzo. Alcune zone sono bloccate fino al 60%.</div>
+      </div>
+      <div class="controls">
+        <div class="stat" id="stats">Scoperte: 0 / 6000</div>
+        <button id="randomReveal">Scegli per me</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <div id="boardWrap">
+        <div id="bgImage" aria-hidden="true"></div>
+        <div class="overlayTop">
+          <div class="stat">Stato: <span id="stateSmall">Pronto</span></div>
+          <div style="width:220px">
+            <div class="progress"><div id="bar" class="bar"></div></div>
+          </div>
+        </div>
+        <div id="grid"></div>
+        <div class="centerMarker"><small id="centerMsg">Area centrale bloccata fino al 60% svelato</small></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <footer>Modalità test — dati sincronizzati in tempo reale.</footer>
+        <div style="text-align:right">
+          <small style="color:var(--muted)">Consiglio: apri in due dispositivi per vedere la sincronizzazione.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT: HTML + Firebase (modulare) -->
+  <script type="module">
+  /***** CONFIGURAZIONE (Sostituisci le variabili qui sotto con i tuoi valori) *****/
+  // Immagine artistica / misteriosa (libera uso: consigliata da Unsplash)
+  const PUZZLE_IMAGE_URL = "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?q=80&w=2400&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder";
+
+  // FIREBASE CONFIG: incolla la tua firebaseConfig qui
+  const firebaseConfig = {
+    apiKey: "INCOLLA_LA_TUA_apiKey",
+    authDomain: "TUO-PROGETTO.firebaseapp.com",
+    databaseURL: "https://TUO-PROGETTO-default-rtdb.firebaseio.com",
+    projectId: "tuo-progetto-id",
+    storageBucket: "TUO-PROGETTO.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:123456:web:abcdef"
+  };
+  /******************************************************************************/
+
+  // Griglia: impostazione "grande" come richiesto
+  const COLS = 100;    // puoi ridurre per test
+  const ROWS = 60;     // totale = 6000
+  const TOTAL = COLS * ROWS;
+
+  // Zona centrale bloccata: percentuale di area centrale che resta bloccata
+  const CENTER_BLOCK_RATIO = 0.30; // 30% centrale (sia in larghezza che altezza)
+  const UNLOCK_THRESHOLD = 0.60; // sblocca quando 60% del totale è svelato
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, onValue, runTransaction, child, get, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const tilesRef = ref(db, 'puzzle/tiles'); // struttura: puzzle/tiles/{index} = {by, at}
+  const countRef = ref(db, 'puzzle/revealedCount');
+
+  // UI
+  const grid = document.getElementById('grid');
+  const bg = document.getElementById('bgImage');
+  const stats = document.getElementById('stats');
+  const bar = document.getElementById('bar');
+  const stateSmall = document.getElementById('stateSmall');
+  const centerMsg = document.getElementById('centerMsg');
+  const randomBtn = document.getElementById('randomReveal');
+
+  bg.style.backgroundImage = `url("${PUZZLE_IMAGE_URL}")`;
+
+  // crea griglia (DOM). Per performance, usiamo elementi semplici.
+  function buildGrid(){
+    grid.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
+    grid.innerHTML = '';
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const idx = r*COLS + c;
+        const el = document.createElement('div');
+        el.className = 'tile hidden';
+        el.dataset.index = idx;
+        // background-position per mostrare il pezzo giusto al reveal
+        const px = (c / (COLS-1))*100;
+        const py = (r / (ROWS-1))*100;
+        el.style.backgroundImage = `url("${PUZZLE_IMAGE_URL}")`;
+        el.style.backgroundSize = `${COLS*100}% ${ROWS*100}%`;
+        el.style.backgroundPosition = `${px}% ${py}%`;
+        el.addEventListener('click', onTileClick);
+        grid.appendChild(el);
+      }
+    }
+  }
+  buildGrid();
+
+  // stato locale
+  let revealed = new Set();
+  let revealedCount = 0;
+
+  // ascolta DB in realtime
+  onValue(tilesRef, snap=>{
+    const data = snap.val() || {};
+    revealed = new Set(Object.keys(data).map(k=>parseInt(k,10)));
+    revealedCount = revealed.size;
+    updateUI();
+  });
+  onValue(countRef, snap=>{
+    const v = snap.val();
+    if (typeof v === 'number') revealedCount = v;
+    updateUI();
+  });
+
+  function updateUI(){
+    // aggiorna tiles
+    for(let i=0;i<TOTAL;i++){
+      const el = grid.querySelector(`.tile[data-index="${i}"]`);
+      if (!el) continue;
+      if (revealed.has(i)){
+        el.classList.remove('hidden');
+        el.classList.add('revealed');
+      } else {
+        el.classList.add('hidden');
+        el.classList.remove('revealed');
+      }
+      // lock visuals
+      if (isCenterBlocked(i) && (revealed.size / TOTAL) < UNLOCK_THRESHOLD){
+        el.classList.add('locked');
+      } else {
+        el.classList.remove('locked');
+      }
+    }
+    // stats
+    stats.textContent = `Scoperte: ${revealed.size} / ${TOTAL}`;
+    const pct = Math.round((revealed.size / TOTAL)*100);
+    bar.style.width = pct + '%';
+    if ((revealed.size / TOTAL) >= UNLOCK_THRESHOLD){
+      centerMsg.textContent = 'Area centrale sbloccata!';
+    } else {
+      const need = Math.ceil(UNLOCK_THRESHOLD*TOTAL) - revealed.size;
+      centerMsg.textContent = `Area centrale bloccata: servono ancora ${need} tessere per sbloccare`;
+    }
+  }
+
+  // definisce se un indice cade nell'area centrale bloccata
+  function isCenterBlocked(index){
+    const r = Math.floor(index / COLS);
+    const c = index % COLS;
+    const cxMin = Math.floor(COLS*(0.5 - CENTER_BLOCK_RATIO/2));
+    const cxMax = Math.ceil(COLS*(0.5 + CENTER_BLOCK_RATIO/2));
+    const cyMin = Math.floor(ROWS*(0.5 - CENTER_BLOCK_RATIO/2));
+    const cyMax = Math.ceil(ROWS*(0.5 + CENTER_BLOCK_RATIO/2));
+    return (c >= cxMin && c <= cxMax && r >= cyMin && r <= cyMax);
+  }
+
+  // click su tile: se bloccata e ancora non sbloccata -> mostra messaggio
+  async function onTileClick(e){
+    const idx = parseInt(e.currentTarget.dataset.index,10);
+    if (revealed.has(idx)) return; // già rivelata
+    // se è quella centrale e area ancora bloccata
+    if (isCenterBlocked(idx) && (revealed.size / TOTAL) < UNLOCK_THRESHOLD){
+      stateSmall.textContent = 'Questa tessera è ancora bloccata';
+      // suggerimento: offri opzione premium/annuncio qui (non implementata)
+      return;
+    }
+    await tryReveal(idx);
+  }
+
+  // reveal random via bottone
+  randomBtn.addEventListener('click', async ()=>{
+    randomBtn.disabled = true;
+    await revealRandom();
+    randomBtn.disabled = false;
+  });
+
+  async function revealRandom(){
+    // costruisci lista di indici non rivelati e non bloccati
+    const candidates = [];
+    for(let i=0;i<TOTAL;i++){
+      if (revealed.has(i)) continue;
+      if (isCenterBlocked(i) && (revealed.size / TOTAL) < UNLOCK_THRESHOLD) continue;
+      candidates.push(i);
+    }
+    if (candidates.length === 0){
+      stateSmall.textContent = 'Nessuna tessera disponibile ora.';
+      return;
+    }
+    const pick = candidates[Math.floor(Math.random()*candidates.length)];
+    await tryReveal(pick);
+  }
+
+  // Transaction per rivelare in modo atomico
+  async function tryReveal(index){
+    const tileRef = child(tilesRef, String(index));
+    try {
+      const res = await runTransaction(tileRef, (cur)=>{
+        if (cur === null) return { by: 'anonymous', at: Date.now() };
+        return; // abort
+      });
+      if (res.committed){
+        // increment counter
+        await runTransaction(countRef, (c)=>{
+          if (typeof c !== 'number') return 1;
+          return c + 1;
+        });
+        stateSmall.textContent = 'Tessera rivelata!';
+      } else {
+        // qualcun altro ha preso: proviamo a rivelare un'altra
+        await revealRandom();
+      }
+    } catch(err){
+      console.error(err);
+      stateSmall.textContent = 'Errore di rete.';
+    }
+  }
+
+  // inizializza countRef se mancante
+  async function initCount(){
+    const snap = await get(countRef);
+    if (!snap.exists()){
+      await update(countRef, 0);
+    }
+  }
+  initCount();
+
+  </script>
+</body>
+</html>
