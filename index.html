@@ -48,7 +48,8 @@
     #puzzle-container {
       display: grid;
       gap: 1px;
-      background-image: url('https://plus.unsplash.com/premium_photo-1674019235851-8d9f614096b8?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=436 background-size: cover;
+      background-image: url(https://plus.unsplash.com/premium_photo-1692897457026-49e4e8d2393e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aXNvbGElMjBkZWwlMjB0ZXNvcm98ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=500');
+      background-size: cover;
       background-position: center;
       overflow: auto;
       touch-action: none;
@@ -126,15 +127,14 @@
     import { getDatabase, ref, onValue, runTransaction, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyCwfGrl1lnombu3WDIKF__qM5ILAwd6MtQ",
-  authDomain: "yourpuzzle-752e5.firebaseapp.com",
-  databaseURL: "https://yourpuzzle-752e5-default-rtdb.firebaseio.com",
-  projectId: "yourpuzzle-752e5",
-  storageBucket: "yourpuzzle-752e5.firebasestorage.app",
-  messagingSenderId: "51685486977",
-  appId: "1:51685486977:web:ae62b136df3a9cd4cef880",
-  measurementId: "G-R2GLF1C9BJ"
-};
+      apiKey: "INSERISCI_API_KEY",
+      authDomain: "INSERISCI_AUTH_DOMAIN",
+      databaseURL: "INSERISCI_DATABASE_URL",
+      projectId: "INSERISCI_PROJECT_ID",
+      storageBucket: "INSERISCI_STORAGE_BUCKET",
+      messagingSenderId: "INSERISCI_MESSAGING_SENDER_ID",
+      appId: "INSERISCI_APP_ID"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
