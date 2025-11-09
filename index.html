@@ -1,132 +1,85 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YourPuzzle - Caccia al Tesoro</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #eee;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-    }
-
-    h1 {
-      margin: 20px;
-    }
-
-    #intro {
-      text-align: center;
-      max-width: 600px;
-      margin: 10px;
-      font-size: 1em;
-      line-height: 1.4em;
-    }
-
-    #progressContainer {
-      width: 90vw;
-      max-width: 600px;
-      background: #222;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 10px;
-    }
-
-    #progressBar {
-      height: 12px;
-      background: #6b5ce0;
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-
-    #puzzle-container {
-      display: grid;
-      gap: 1px;
-      background-image: url('https://plus.unsplash.com/premium_photo-1694475567447-12bad400d7a5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8aXNvbGElMjBkZWwlMjB0ZXNvcm98ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=500');
-      background-size: cover;
-      background-position: center;
-      overflow: auto;
-      touch-action: none;
-      width: 90vw;
-      height: 70vh;
-      max-width: 1200px;
-      max-height: 800px;
-    }
-
-    .tile {
-      background-color: rgba(0,0,0,0.7);
-      cursor: pointer;
-      width: calc(90vw / 100);
-      height: calc(90vw / 100);
-      min-width: 5px;
-      min-height: 5px;
-      position: relative;
-      transition: background-color 0.2s;
-    }
-
-    .tile.revealed {
-      background-color: transparent;
-      cursor: default;
-    }
-
-    .nickname {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      color: #fff;
-      font-size: 0.6em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0;
-      animation: fadeIn 0.6s ease forwards;
-    }
-
-    .treasure {
-      font-size: 1em;
-      color: gold;
-      animation: glow 1.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes glow {
-      from { text-shadow: 0 0 5px #ff0, 0 0 10px gold; }
-      to { text-shadow: 0 0 15px #ffea00, 0 0 30px gold; }
-    }
-
-    @keyframes fadeIn {
-      to { opacity: 1; transform: scale(1); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YourPuzzle - Treasure Island</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #111;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { margin: 10px; text-align:center;}
+  #banner {
+    width: 100%;
+    background-color: gold;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    display: none;
+  }
+  #progressContainer {
+    width: 90vw;
+    max-width: 800px;
+    background: #222;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  #progressBar {
+    height: 12px;
+    background: #6b5ce0;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  #puzzle-container {
+    display: grid;
+    gap: 1px;
+    background-image: url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80');
+    background-size: cover;
+    background-position: center;
+    width: 90vw;
+    height: 70vh;
+    max-width: 800px;
+    max-height: 800px;
+  }
+  .tile {
+    background-color: rgba(0,0,0,0.8);
+    cursor: pointer;
+    width: calc(90vw / 50);
+    height: calc(90vw / 50);
+    min-width: 5px;
+    min-height: 5px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#fff;
+    font-size:0.6em;
+  }
+  .tile.revealed { background-color: transparent; cursor: default;}
+  .treasure { animation: glow 1.5s infinite alternate; color: gold; }
+  @keyframes glow { from { text-shadow:0 0 5px #ff0} to { text-shadow:0 0 15px #ffea00;} }
+</style>
 </head>
 <body>
-  <h1>YourPuzzle - Caccia al Tesoro</h1>
-  <div id="intro">
-    Benvenuto su <strong>YourPuzzle</strong>!<br>
-    Ogni giorno c’è un <strong>tesoro nascosto</strong> in una delle tessere.<br>
-    <ul>
-      <li><strong>Una sola mossa al giorno</strong>: scegli con attenzione quale tessera scoprire.</li>
-      <li>Se trovi il tesoro, puoi lasciare il tuo <strong>nickname</strong> in sovrimpressione, visibile fino a mezzanotte.</li>
-      <li>La barra di progresso mostra quanto del puzzle è stato esplorato dagli utenti di oggi.</li>
-    </ul>
-    Buona fortuna! 🔍⭐
-  </div>
-  <div id="progressContainer"><div id="progressBar"></div></div>
-  <div id="puzzle-container"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, onValue, runTransaction, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<h1>YourPuzzle - Treasure Island</h1>
+<div id="banner"></div>
+<div id="progressContainer"><div id="progressBar"></div></div>
+<div id="puzzle-container"></div>
 
-    const firebaseConfig = {
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue, runTransaction, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+// Firebase config
+const firebaseConfig = {
   apiKey: "AIzaSyCwfGrl1lnombu3WDIKF__qM5ILAwd6MtQ",
   authDomain: "yourpuzzle-752e5.firebaseapp.com",
   databaseURL: "https://yourpuzzle-752e5-default-rtdb.firebaseio.com",
@@ -136,106 +89,98 @@
   appId: "1:51685486977:web:ae62b136df3a9cd4cef880",
   measurementId: "G-R2GLF1C9BJ"
 };
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+const ROWS = 50, COLS = 50, TOTAL = ROWS*COLS;
+const container = document.getElementById("puzzle-container");
+const progressBar = document.getElementById("progressBar");
+const banner = document.getElementById("banner");
 
-    const ROWS = 100;
-    const COLS = 100;
-    const TOTAL = ROWS * COLS;
-    const container = document.getElementById("puzzle-container");
-    container.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
-    const progressBar = document.getElementById("progressBar");
+// Griglia con lettere e numeri tipo battaglia navale
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+for(let r=0;r<ROWS;r++){
+  for(let c=0;c<COLS;c++){
+    const tile = document.createElement("div");
+    tile.classList.add("tile");
+    tile.dataset.row=r;
+    tile.dataset.col=c;
+    tile.textContent = letters[r%26]+(c+1);
+    tile.addEventListener("click", ()=>revealTile(r,c,tile));
+    container.appendChild(tile);
+  }
+}
 
-    let userId = localStorage.getItem("userId");
-    if (!userId) {
-      userId = "user_" + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem("userId", userId);
+// Identificativo utente
+let userId = localStorage.getItem("userId");
+if(!userId){ userId="user_"+Math.random().toString(36).substr(2,9); localStorage.setItem("userId",userId); }
+
+let treasurePos=null;
+const treasureRef = ref(db,"treasure/today");
+
+async function initTreasure(){
+  await runTransaction(treasureRef, (current)=>{
+    if(!current){
+      const row=Math.floor(Math.random()*ROWS);
+      const col=Math.floor(Math.random()*COLS);
+      return {row,col};
     }
+    return;
+  });
+  const snap = await get(treasureRef);
+  return snap.val();
+}
 
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const tile = document.createElement("div");
-        tile.classList.add("tile");
-        tile.dataset.row = r;
-        tile.dataset.col = c;
-        tile.addEventListener("click", () => revealTile(r, c, tile));
-        container.appendChild(tile);
-      }
+initTreasure().then(pos=>{ treasurePos=pos; });
+
+// Funzione per rivelare una cella
+async function revealTile(row,col,tileEl){
+  if(tileEl.classList.contains("revealed")) return;
+
+  const todayKey = new Date().toISOString().slice(0,10);
+  const userClickRef = ref(db,`users/${userId}/lastClick`);
+  const snapshot = await get(userClickRef);
+  if(snapshot.exists() && snapshot.val()===todayKey) return;
+
+  runTransaction(ref(db,`tiles/${row}_${col}`),(current)=>{ if(!current) return true; });
+  set(userClickRef,todayKey);
+  tileEl.classList.add("revealed");
+
+  // Tesoro
+  if(treasurePos && treasurePos.row===row && treasurePos.col===col){
+    const nick = prompt("🎉 Hai trovato il tesoro! Inserisci il tuo nickname:");
+    if(nick){
+      const nickRef = ref(db,`treasure/nicknames/${todayKey}`);
+      set(nickRef,{row,col,nick});
     }
+  }
+}
 
-    const treasureRef = ref(db, "treasure/today");
-    async function initTreasure() {
-      await runTransaction(treasureRef, (current) => {
-        if (!current) {
-          const row = Math.floor(Math.random() * ROWS);
-          const col = Math.floor(Math.random() * COLS);
-          return { row, col };
-        }
-        return;
-      });
-      const snap = await get(treasureRef);
-      return snap.val();
-    }
+// Aggiorna celle già rivelate
+onValue(ref(db,"tiles"),snap=>{
+  const data = snap.val()||{};
+  const revealedCount = Object.keys(data).length;
+  for(let key in data){
+    const [r,c] = key.split("_");
+    const tileEl = document.querySelector(`.tile[data-row='${r}'][data-col='${c}']`);
+    if(tileEl) tileEl.classList.add("revealed");
+  }
+  progressBar.style.width=(revealedCount/TOTAL*100)+"%";
+});
 
-    let treasurePos = null;
-    initTreasure().then(pos => { treasurePos = pos; });
+// Mostra banner con nickname del vincitore
+onValue(ref(db,"treasure/nicknames"),snap=>{
+  const data = snap.val()||{};
+  const todayKey = new Date().toISOString().slice(0,10);
+  if(data[todayKey]){
+    banner.style.display="block";
+    banner.textContent = `🏴‍☠️ Tesoro trovato oggi da: ${data[todayKey].nick}`;
+    const {row,col} = data[todayKey];
+    const tileEl = document.querySelector(`.tile[data-row='${row}'][data-col='${col}']`);
+    if(tileEl) tileEl.classList.add("revealed");
+  }
+});
+</script>
 
-    let dbSnapshot = {};
-
-    async function revealTile(row, col, tileEl) {
-      if (tileEl.classList.contains("revealed")) return;
-
-      const todayKey = new Date().toISOString().slice(0, 10);
-      const userClickRef = ref(db, `users/${userId}/lastClick`);
-      const snapshot = await get(userClickRef);
-      if (snapshot.exists() && snapshot.val() === todayKey) return;
-
-      runTransaction(ref(db, `tiles/${row}_${col}`), (current) => {
-        if (!current) return true;
-      });
-
-      set(userClickRef, todayKey);
-
-      if (treasurePos && treasurePos.row == row && treasurePos.col == col) {
-        const nick = prompt("🎉 Hai trovato il tesoro! Inserisci il tuo nickname:");
-        if (nick) {
-          const nickRef = ref(db, `treasure/nicknames/${todayKey}`);
-          set(nickRef, { row, col, nick });
-          const span = document.createElement("div");
-          span.classList.add("nickname", "treasure");
-          span.textContent = nick + " ⭐";
-          tileEl.appendChild(span);
-        }
-      }
-    }
-
-    onValue(ref(db, "tiles"), (snap) => {
-      dbSnapshot = snap.val() || {};
-      const revealedCount = Object.keys(dbSnapshot).length;
-      for (let key in dbSnapshot) {
-        const [r, c] = key.split("_");
-        const tileEl = document.querySelector(`.tile[data-row='${r}'][data-col='${c}']`);
-        if (tileEl) tileEl.classList.add("revealed");
-      }
-      progressBar.style.width = (revealedCount / TOTAL * 100) + "%";
-    });
-
-    onValue(ref(db, "treasure/nicknames"), (snap) => {
-      const data = snap.val() || {};
-      const todayKey = new Date().toISOString().slice(0, 10);
-      if (data[todayKey]) {
-        const { row, col, nick } = data[todayKey];
-        const tileEl = document.querySelector(`.tile[data-row='${row}'][data-col='${col}']`);
-        if (tileEl && !tileEl.querySelector(".nickname")) {
-          const span = document.createElement("div");
-          span.classList.add("nickname", "treasure");
-          span.textContent = nick + " ⭐";
-          tileEl.appendChild(span);
-          tileEl.classList.add("revealed");
-        }
-      }
-    });
-  </script>
 </body>
 </html>
