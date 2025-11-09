@@ -5,63 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YourPuzzle - Treasure Island</title>
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #111;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  h1 { margin: 10px; text-align:center;}
-  #banner {
-    width: 100%;
-    background-color: gold;
-    color: black;
-    font-weight: bold;
-    text-align: center;
-    padding: 10px;
-    display: none;
-  }
-  #progressContainer {
-    width: 90vw;
-    max-width: 800px;
-    background: #222;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 10px;
-  }
-  #progressBar {
-    height: 12px;
-    background: #6b5ce0;
-    width: 0%;
-    transition: width 0.3s ease;
-  }
-  #puzzle-container {
-    display: grid;
-    gap: 1px;
-    background-size: cover;
-    background-position: center;
-    width: 90vw;
-    height: 70vh;
-    max-width: 800px;
-    max-height: 800px;
-  }
-  .tile {
-    background-color: rgba(0,0,0,0.8);
-    cursor: pointer;
-    width: calc(100% / 50);
-    height: calc(100% / 50);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#fff;
-    font-size:0.6em;
-  }
-  .tile.revealed { background-color: transparent; cursor: default;}
-  .treasure { animation: glow 1.5s infinite alternate; color: gold; }
-  @keyframes glow { from { text-shadow:0 0 5px #ff0} to { text-shadow:0 0 15px #ffea00;} }
+  body { margin:0; font-family:Arial,sans-serif; background:#111; display:flex; flex-direction:column; align-items:center; color:#eee;}
+  h1 { margin:10px; text-align:center;}
+  #banner { width:100%; background:gold; color:black; font-weight:bold; text-align:center; padding:10px; display:none;}
+  #progressContainer { width:90vw; max-width:800px; background:#222; border-radius:10px; overflow:hidden; margin-bottom:10px;}
+  #progressBar { height:12px; background:#6b5ce0; width:0%; transition:width 0.3s ease;}
+  #puzzle-container { position:relative; width:90vw; height:70vh; max-width:800px; max-height:800px; background-image:url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80'); background-size:cover; background-position:center;}
+  .tile { position:absolute; background:rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; color:#fff; font-size:0.6em; cursor:pointer;}
+  .tile.revealed { display:none;}
+  .treasure { animation: glow 1.5s infinite alternate; color:gold; }
+  @keyframes glow { from {text-shadow:0 0 5px #ff0} to {text-shadow:0 0 15px #ffea00;} }
 </style>
 </head>
 <body>
@@ -96,28 +49,29 @@ const container = document.getElementById("puzzle-container");
 const progressBar = document.getElementById("progressBar");
 const banner = document.getElementById("banner");
 
-// Sfondo nascosto all'inizio
-container.style.backgroundImage = "url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80')";
-
-// Griglia 50x50 con lettere/numeri sulle tessere stesse
+// Crea le tessere
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
 for(let r=0;r<ROWS;r++){
   for(let c=0;c<COLS;c++){
     const tile = document.createElement("div");
     tile.classList.add("tile");
-    tile.dataset.row=r;
-    tile.dataset.col=c;
+    tile.dataset.row = r;
+    tile.dataset.col = c;
     tile.textContent = letters[r%26]+(c+1);
-    tile.addEventListener("click",()=>revealTile(tile,r,c));
+    tile.style.width = `${100/COLS}%`;
+    tile.style.height = `${100/ROWS}%`;
+    tile.style.left = `${(c/50)*100}%`;
+    tile.style.top = `${(r/50)*100}%`;
+    tile.addEventListener("click", ()=>revealTile(tile,r,c));
     container.appendChild(tile);
   }
 }
 
-// Identificativo utente per click giornaliero
+// Identificativo utente
 let userId = localStorage.getItem("userId");
 if(!userId){ userId="user_"+Math.random().toString(36).substr(2,9); localStorage.setItem("userId",userId); }
 
-// Tesoro casuale salvato su Firebase
+// Tesoro casuale
 const treasureRef = ref(db,"treasure/today");
 async function initTreasure(){
   await runTransaction(treasureRef, (current)=>{
@@ -135,42 +89,44 @@ async function initTreasure(){
 let treasurePos = null;
 initTreasure().then(pos=>treasurePos=pos);
 
-// Funzione per rivelare una cella
+// Rivelazione tessera
 async function revealTile(tile,row,col){
   if(tile.classList.contains("revealed")) return;
 
   const todayKey = new Date().toISOString().slice(0,10);
   const userClickRef = ref(db,`users/${userId}/lastClick`);
   const snapshot = await get(userClickRef);
-  if(snapshot.exists() && snapshot.val()===todayKey) return; // già cliccato oggi
+  if(snapshot.exists() && snapshot.val()===todayKey) return; // già cliccato
 
   runTransaction(ref(db,`tiles/${row}_${col}`),(current)=>{ if(!current) return true; });
   set(userClickRef,todayKey);
   tile.classList.add("revealed");
 
-  // Tesoro
   if(treasurePos && treasurePos.row===row && treasurePos.col===col){
+    tile.classList.add("treasure");
     const nick = prompt("🎉 Hai trovato il tesoro! Inserisci il tuo nickname:");
     if(nick){
       const nickRef = ref(db,`treasure/nicknames/${todayKey}`);
       set(nickRef,{row,col,nick});
     }
   }
+
+  // Aggiorna barra progresso
+  const revealed = document.querySelectorAll(".tile.revealed").length;
+  progressBar.style.width=(revealed/TOTAL*100)+"%";
 }
 
-// Aggiorna celle già rivelate
+// Aggiorna tessere già rivelate
 onValue(ref(db,"tiles"),snap=>{
   const data = snap.val()||{};
-  const revealedCount = Object.keys(data).length;
   for(let key in data){
     const [r,c] = key.split("_");
     const tileEl = document.querySelector(`.tile[data-row='${r}'][data-col='${c}']`);
     if(tileEl) tileEl.classList.add("revealed");
   }
-  progressBar.style.width=(revealedCount/TOTAL*100)+"%";
 });
 
-// Mostra banner con nickname del vincitore
+// Banner con nickname
 onValue(ref(db,"treasure/nicknames"),snap=>{
   const data = snap.val()||{};
   const todayKey = new Date().toISOString().slice(0,10);
