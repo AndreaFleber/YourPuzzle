@@ -41,7 +41,6 @@
   #puzzle-container {
     display: grid;
     gap: 1px;
-    background-image: url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80');
     background-size: cover;
     background-position: center;
     width: 90vw;
@@ -52,10 +51,8 @@
   .tile {
     background-color: rgba(0,0,0,0.8);
     cursor: pointer;
-    width: calc(90vw / 50);
-    height: calc(90vw / 50);
-    min-width: 5px;
-    min-height: 5px;
+    width: calc(100% / 50);
+    height: calc(100% / 50);
     display:flex;
     justify-content:center;
     align-items:center;
@@ -76,9 +73,9 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-// Firebase config
+// ======= SOSTITUISCI QUI SOTTO CON IL TUO FIREBASE CONFIG =======
 const firebaseConfig = {
   apiKey: "AIzaSyCwfGrl1lnombu3WDIKF__qM5ILAwd6MtQ",
   authDomain: "yourpuzzle-752e5.firebaseapp.com",
@@ -89,15 +86,20 @@ const firebaseConfig = {
   appId: "1:51685486977:web:ae62b136df3a9cd4cef880",
   measurementId: "G-R2GLF1C9BJ"
 };
+// ===============================================================
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const ROWS = 50, COLS = 50, TOTAL = ROWS*COLS;
+const ROWS=50, COLS=50, TOTAL=ROWS*COLS;
 const container = document.getElementById("puzzle-container");
 const progressBar = document.getElementById("progressBar");
 const banner = document.getElementById("banner");
 
-// Griglia con lettere e numeri tipo battaglia navale
+// Sfondo nascosto all'inizio
+container.style.backgroundImage = "url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80')";
+
+// Griglia 50x50 con lettere/numeri sulle tessere stesse
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
 for(let r=0;r<ROWS;r++){
   for(let c=0;c<COLS;c++){
@@ -106,18 +108,17 @@ for(let r=0;r<ROWS;r++){
     tile.dataset.row=r;
     tile.dataset.col=c;
     tile.textContent = letters[r%26]+(c+1);
-    tile.addEventListener("click", ()=>revealTile(r,c,tile));
+    tile.addEventListener("click",()=>revealTile(tile,r,c));
     container.appendChild(tile);
   }
 }
 
-// Identificativo utente
+// Identificativo utente per click giornaliero
 let userId = localStorage.getItem("userId");
 if(!userId){ userId="user_"+Math.random().toString(36).substr(2,9); localStorage.setItem("userId",userId); }
 
-let treasurePos=null;
+// Tesoro casuale salvato su Firebase
 const treasureRef = ref(db,"treasure/today");
-
 async function initTreasure(){
   await runTransaction(treasureRef, (current)=>{
     if(!current){
@@ -131,20 +132,21 @@ async function initTreasure(){
   return snap.val();
 }
 
-initTreasure().then(pos=>{ treasurePos=pos; });
+let treasurePos = null;
+initTreasure().then(pos=>treasurePos=pos);
 
 // Funzione per rivelare una cella
-async function revealTile(row,col,tileEl){
-  if(tileEl.classList.contains("revealed")) return;
+async function revealTile(tile,row,col){
+  if(tile.classList.contains("revealed")) return;
 
   const todayKey = new Date().toISOString().slice(0,10);
   const userClickRef = ref(db,`users/${userId}/lastClick`);
   const snapshot = await get(userClickRef);
-  if(snapshot.exists() && snapshot.val()===todayKey) return;
+  if(snapshot.exists() && snapshot.val()===todayKey) return; // già cliccato oggi
 
   runTransaction(ref(db,`tiles/${row}_${col}`),(current)=>{ if(!current) return true; });
   set(userClickRef,todayKey);
-  tileEl.classList.add("revealed");
+  tile.classList.add("revealed");
 
   // Tesoro
   if(treasurePos && treasurePos.row===row && treasurePos.col===col){
