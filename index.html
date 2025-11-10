@@ -1,65 +1,108 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>YourPuzzle - Treasure Island</title>
 <style>
-  body { margin:0; font-family:Arial,sans-serif; background:#111; display:flex; flex-direction:column; align-items:center; color:#eee;}
-  h1 { margin:10px; text-align:center;}
-  #banner { width:100%; background:gold; color:black; font-weight:bold; text-align:center; padding:10px; display:none;}
-  #progressContainer { width:95vw; max-width:1200px; background:#222; border-radius:10px; overflow:hidden; margin-bottom:10px;}
-  #progressBar { height:12px; background:#6b5ce0; width:0%; transition:width 0.3s ease;}
-  #puzzle-container { position:relative; width:95vw; height:90vh; max-width:1200px; max-height:1200px; background-image:url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80'); background-size:cover; background-position:center;}
-  
-  .tile {
-    position: absolute;
-    background: rgba(0,0,0,0.9);
-    cursor: pointer;
-    font-size: 1em;
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 4px 6px;
-    box-sizing: border-box;
+    align-items: center;
+    color: #eee;
   }
-  
-  .tile.revealed { display:none; }
-  
-  .letter {
-    color: #fff;
+  h1 {
+    margin: 10px;
+    text-align: center;
+  }
+  #banner {
+    width: 100%;
+    background: gold;
+    color: black;
     font-weight: bold;
-    font-size: 0.7em;
-    align-self: flex-start;
+    text-align: center;
+    padding: 10px;
+    display: none;
   }
-  
-  .number {
+  #progressContainer {
+    width: 95vw;
+    max-width: 1200px;
+    background: #222;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  #progressBar {
+    height: 12px;
+    background: #6b5ce0;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  #puzzle-container {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 1200px;
+    max-height: 1200px;
+    background-image: url('https://images.unsplash.com/photo-1513415277900-a62401e19be4?auto=format&fit=crop&w=1500&q=80');
+    background-size: cover;
+    background-position: center;
+  }
+  .tile {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+    font-size: 1em;
+  }
+  .letter {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-weight: bold;
+    font-size: 1em;
     color: #fff;
-    font-size: 0.7em;
-    align-self: flex-end;
+    pointer-events: none;
   }
-  
+  .number {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    font-size: 1em;
+    color: #fff;
+    pointer-events: none;
+  }
+  .tile.revealed {
+    display: none;
+  }
   .treasure {
     animation: glow 1.5s infinite alternate;
     color: gold;
   }
-  
-  @keyframes glow { from {text-shadow:0 0 5px #ff0} to {text-shadow:0 0 15px #ffea00;} }
+  @keyframes glow {
+    from {
+      text-shadow: 0 0 5px #ff0;
+    }
+    to {
+      text-shadow: 0 0 15px #ffea00;
+    }
+  }
 </style>
 </head>
 <body>
+  <h1>YourPuzzle - Treasure Island</h1>
+  <div id="banner"></div>
+  <div id="progressContainer"><div id="progressBar"></div></div>
+  <div id="puzzle-container"></div>
 
-<h1>YourPuzzle - Treasure Island</h1>
-<div id="banner"></div>
-<div id="progressContainer"><div id="progressBar"></div></div>
-<div id="puzzle-container"></div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, get, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-// ======= SOSTITUISCI QUI SOTTO CON IL TUO FIREBASE CONFIG =======
-const firebaseConfig = {
+    // ======= SOSTITUISCI QUI SOTTO CON IL TUO FIREBASE CONFIG =======
+    const firebaseConfig = {
   apiKey: "AIzaSyCwfGrl1lnombu3WDIKF__qM5ILAwd6MtQ",
   authDomain: "yourpuzzle-752e5.firebaseapp.com",
   databaseURL: "https://yourpuzzle-752e5-default-rtdb.firebaseio.com",
@@ -69,117 +112,123 @@ const firebaseConfig = {
   appId: "1:51685486977:web:ae62b136df3a9cd4cef880",
   measurementId: "G-R2GLF1C9BJ"
 };
-// ===============================================================
+    // ===============================================================
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-const ROWS=50, COLS=50, TOTAL=ROWS*COLS;
-const container = document.getElementById("puzzle-container");
-const progressBar = document.getElementById("progressBar");
-const banner = document.getElementById("banner");
+    const ROWS = 33;
+    const COLS = 33;
+    const TOTAL = ROWS * COLS;
+    const container = document.getElementById("puzzle-container");
+    const progressBar = document.getElementById("progressBar");
+    const banner = document.getElementById("banner");
 
-// Crea le tessere
-const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
-for(let r=0;r<ROWS;r++){
-  for(let c=0;c<COLS;c++){
-    const tile = document.createElement("div");
-    tile.classList.add("tile");
-    tile.dataset.row = r;
-    tile.dataset.col = c;
-    tile.style.width = `${100/COLS}%`;
-    tile.style.height = `${100/ROWS}%`;
-    tile.style.left = `${(c/COLS)*100}%`;
-    tile.style.top = `${(r/ROWS)*100}%`;
+    // Crea le tessere
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        tile.dataset.row = r;
+        tile.dataset.col = c;
+        tile.style.width = `${100 / COLS}%`;
+        tile.style.height = `${100 / ROWS}%`;
+        tile.style.left = `${(c / COLS) * 100}%`;
+        tile.style.top = `${(r / ROWS) * 100}%`;
 
-    const letterSpan = document.createElement("span");
-    letterSpan.classList.add("letter");
-    letterSpan.textContent = letters[r % 26];
-    tile.appendChild(letterSpan);
+        const letterSpan = document.createElement("span");
+        letterSpan.classList.add("letter");
+        letterSpan.textContent = letters[r % 26];
+        tile.appendChild(letterSpan);
 
-    const numberSpan = document.createElement("span");
-    numberSpan.classList.add("number");
-    numberSpan.textContent = (c+1);
-    tile.appendChild(numberSpan);
+        const numberSpan = document.createElement("span");
+        numberSpan.classList.add("number");
+        numberSpan.textContent = (c + 1);
+        tile.appendChild(numberSpan);
 
-    tile.addEventListener("click", ()=>revealTile(tile,r,c));
-    container.appendChild(tile);
-  }
-}
-
-// Identificativo utente
-let userId = localStorage.getItem("userId");
-if(!userId){ userId="user_"+Math.random().toString(36).substr(2,9); localStorage.setItem("userId",userId); }
-
-// Tesoro casuale
-const treasureRef = ref(db,"treasure/today");
-async function initTreasure(){
-  await runTransaction(treasureRef, (current)=>{
-    if(!current){
-      const row=Math.floor(Math.random()*ROWS);
-      const col=Math.floor(Math.random()*COLS);
-      return {row,col};
+        tile.addEventListener("click", () => revealTile(tile, r, c));
+        container.appendChild(tile);
+      }
     }
-    return;
-  });
-  const snap = await get(treasureRef);
-  return snap.val();
-}
 
-let treasurePos = null;
-initTreasure().then(pos=>treasurePos=pos);
-
-// Rivelazione tessera
-async function revealTile(tile,row,col){
-  if(tile.classList.contains("revealed")) return;
-
-  const todayKey = new Date().toISOString().slice(0,10);
-  const userClickRef = ref(db,`users/${userId}/lastClick`);
-  const snapshot = await get(userClickRef);
-  if(snapshot.exists() && snapshot.val()===todayKey) return; // già cliccato
-
-  runTransaction(ref(db,`tiles/${row}_${col}`),(current)=>{ if(!current) return true; });
-  set(userClickRef,todayKey);
-  tile.classList.add("revealed");
-
-  if(treasurePos && treasurePos.row===row && treasurePos.col===col){
-    tile.classList.add("treasure");
-    const nick = prompt("🎉 Hai trovato il tesoro! Inserisci il tuo nickname:");
-    if(nick){
-      const nickRef = ref(db,`treasure/nicknames/${todayKey}`);
-      set(nickRef,{row,col,nick});
+    // Identificativo utente
+    let userId = localStorage.getItem("userId");
+    if (!userId) {
+      userId = "user_" + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem("userId", userId);
     }
-  }
 
-  // Aggiorna barra progresso
-  const revealed = document.querySelectorAll(".tile.revealed").length;
-  progressBar.style.width=(revealed/TOTAL*100)+"%";
-}
+    // Tesoro casuale
+    const treasureRef = ref(db, "treasure/today");
+    async function initTreasure() {
+      await runTransaction(treasureRef, (current) => {
+        if (!current) {
+          const row = Math.floor(Math.random() * ROWS);
+          const col = Math.floor(Math.random() * COLS);
+          return { row, col };
+        }
+        return;
+      });
+      const snap = await get(treasureRef);
+      return snap.val();
+    }
 
-// Aggiorna tessere già rivelate
-onValue(ref(db,"tiles"),snap=>{
-  const data = snap.val()||{};
-  for(let key in data){
-    const [r,c] = key.split("_");
-    const tileEl = document.querySelector(`.tile[data-row='${r}'][data-col='${c}']`);
-    if(tileEl) tileEl.classList.add("revealed");
-  }
-});
+    let treasurePos = null;
+    initTreasure().then((pos) => (treasurePos = pos));
 
-// Banner con nickname
-onValue(ref(db,"treasure/nicknames"),snap=>{
-  const data = snap.val()||{};
-  const todayKey = new Date().toISOString().slice(0,10);
-  if(data[todayKey]){
-    banner.style.display="block";
-    banner.textContent = `🏴‍☠️ Tesoro trovato oggi da: ${data[todayKey].nick}`;
-    const {row,col} = data[todayKey];
-    const tileEl = document.querySelector(`.tile[data-row='${row}'][data-col='${col}']`);
-    if(tileEl) tileEl.classList.add("revealed");
-    tileEl.classList.add("treasure");
-  }
-});
-</script>
+    // Rivelazione tessera
+    async function revealTile(tile, row, col) {
+      if (tile.classList.contains("revealed")) return;
 
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const userClickRef = ref(db, `users/${userId}/lastClick`);
+      const snapshot = await get(userClickRef);
+      if (snapshot.exists() && snapshot.val() === todayKey) return; // già cliccato
+
+      runTransaction(ref(db, `tiles/${row}_${col}`), (current) => {
+        if (!current) return true;
+      });
+      set(userClickRef, todayKey);
+      tile.classList.add("revealed");
+
+      if (treasurePos && treasurePos.row === row && treasurePos.col === col) {
+        tile.classList.add("treasure");
+        const nick = prompt("🎉 Hai trovato il tesoro! Inserisci il tuo nickname:");
+        if (nick) {
+          const nickRef = ref(db, `treasure/nicknames/${todayKey}`);
+          set(nickRef, { row, col, nick });
+        }
+      }
+
+      // Aggiorna barra progresso
+      const revealed = document.querySelectorAll(".tile.revealed").length;
+      progressBar.style.width = (revealed / TOTAL) * 100 + "%";
+    }
+
+    // Aggiorna tessere già rivelate
+    onValue(ref(db, "tiles"), (snap) => {
+      const data = snap.val() || {};
+      for (let key in data) {
+        const [r, c] = key.split("_");
+        const tileEl = document.querySelector(`.tile[data-row='${r}'][data-col='${c}']`);
+        if (tileEl) tileEl.classList.add("revealed");
+      }
+    });
+
+    // Banner con nickname
+    onValue(ref(db, "treasure/nicknames"), (snap) => {
+      const data = snap.val() || {};
+      const todayKey = new Date().toISOString().slice(0, 10);
+      if (data[todayKey]) {
+        banner.style.display = "block";
+        banner.textContent = `🏴‍☠️ Tesoro trovato oggi da: ${data[todayKey].nick}`;
+        const { row, col } = data[todayKey];
+        const tileEl = document.querySelector(`.tile[data-row='${row}'][data-col='${col}']`);
+        if (tileEl) tileEl.classList.add("revealed");
+        tileEl.classList.add("treasure");
+      }
+    });
+  </script>
 </body>
 </html>
