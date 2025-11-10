@@ -55,7 +55,7 @@
     position: absolute;
     background: rgba(0, 0, 0, 0.9);
     cursor: pointer;
-    font-size: 1em;
+    font-size: 1.2em;
     color: #fff;
     display: flex;
     justify-content: center;
@@ -106,8 +106,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const ROWS = 33;
-    const COLS = 33;
+    const ROWS = 25;
+    const COLS = 25;
     const TOTAL = ROWS * COLS;
     const container = document.getElementById("puzzle-container");
     const progressBar = document.getElementById("progressBar");
