@@ -55,7 +55,7 @@
     position: absolute;
     background: rgba(0, 0, 0, 0.9);
     cursor: pointer;
-    font-size: 0.6em; /* font ridotto */
+    font-size: 0.6em; /* font più piccolo */
     color: #fff;
     display: flex;
     justify-content: center;
@@ -65,6 +65,8 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    border: 1px solid #444; /* bordo sottile grigio scuro */
+    box-sizing: border-box; /* per includere il bordo nella dimensione */
   }
   .tile.revealed {
     display: none;
