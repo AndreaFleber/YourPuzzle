@@ -56,23 +56,12 @@
     background: rgba(0, 0, 0, 0.9);
     cursor: pointer;
     font-size: 1em;
-  }
-  .letter {
-    position: absolute;
-    top: 6px;
-    left: 6px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-weight: bold;
-    font-size: 1em;
-    color: #fff;
-    pointer-events: none;
-  }
-  .number {
-    position: absolute;
-    bottom: 6px;
-    right: 6px;
-    font-size: 1em;
-    color: #fff;
-    pointer-events: none;
+    user-select: none;
   }
   .tile.revealed {
     display: none;
@@ -124,8 +113,7 @@
     const progressBar = document.getElementById("progressBar");
     const banner = document.getElementById("banner");
 
-    // Crea le tessere
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+    // Crea le tessere con numeri progressivi
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const tile = document.createElement("div");
@@ -136,16 +124,8 @@
         tile.style.height = `${100 / ROWS}%`;
         tile.style.left = `${(c / COLS) * 100}%`;
         tile.style.top = `${(r / ROWS) * 100}%`;
-
-        const letterSpan = document.createElement("span");
-        letterSpan.classList.add("letter");
-        letterSpan.textContent = letters[r % 26];
-        tile.appendChild(letterSpan);
-
-        const numberSpan = document.createElement("span");
-        numberSpan.classList.add("number");
-        numberSpan.textContent = (c + 1);
-        tile.appendChild(numberSpan);
+        const number = r * COLS + c + 1; // numero progressivo da 1 a TOTAL
+        tile.textContent = number;
 
         tile.addEventListener("click", () => revealTile(tile, r, c));
         container.appendChild(tile);
@@ -161,6 +141,7 @@
 
     // Tesoro casuale
     const treasureRef = ref(db, "treasure/today");
+
     async function initTreasure() {
       await runTransaction(treasureRef, (current) => {
         if (!current) {
